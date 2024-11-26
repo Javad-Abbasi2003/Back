@@ -238,6 +238,8 @@ function playCard(payload, ws, wss) {
 
 //reset game Object
 function resetGame(ws, wss) {
+  // no payload
+
   game = {
     users: [],
     teams: [{players: [], score: 0}, {players: [], score: 0}],
@@ -249,7 +251,7 @@ function resetGame(ws, wss) {
       baseSuit: ""
     },
     userTurn: "",
-    winners: null,
+    winners: [],
   }
 
   const date = new Date();
@@ -260,6 +262,32 @@ function resetGame(ws, wss) {
     type: "game-reseted"
   }
   wss.broadcast(JSON.stringify(resData));
+}
+
+function newGame(ws, wss) {
+  // no payload
+
+  game.teams[0].score = 0;
+  game.teams[1].score = 0;
+  game.trumper = "";
+  game.hands = {};
+  game.trump = "";
+  game.middle = {
+    cards: [],
+    baseSuit: ""
+  }
+  game.userTurn = "";
+  game.winners = [];
+
+  const resData = {
+    type: "new-game",
+    payload: {
+      gameObject: game
+    }
+  }
+  wss.broadcast(JSON.stringify(resData));
+
+  startGame(ws, wss);
 }
 
 //////////////////// dependent functions ////////////////////
@@ -327,4 +355,4 @@ function calcRoundResult() {
 };
 
 
-module.exports = { addPlayer, startGame, selectTrump, playCard, resetGame };
+module.exports = { addPlayer, startGame, selectTrump, playCard, resetGame, newGame };

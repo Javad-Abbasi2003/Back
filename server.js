@@ -1,6 +1,6 @@
 const http = require("http");
 const websocket = require("ws");
-const { addPlayer, startGame, selectTrump, playCard, resetGame } = require("./game");
+const { addPlayer, startGame, selectTrump, playCard, resetGame, newGame } = require("./game");
 
 const server = http.createServer((req, res) => res.end("I am connected") );
 const wss = new websocket.Server({ server });
@@ -36,6 +36,9 @@ function handleWebSocketMessage(type, payload, ws) {
   //     break;
     case 'reset-game':
       resetGame(ws, wss);
+      break;
+    case 'new-game':
+      newGame(ws, wss);
       break;
     default:
       console.log('Unknown message type:', type);

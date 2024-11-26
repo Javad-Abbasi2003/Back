@@ -245,8 +245,10 @@ function resetGame(ws, wss) {
     userTurn: "",
     winners: null,
   }
-
-  console.log("GAME RESETED!!!");
+  
+  const date = new Date();
+  const time = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+  console.log("Game ReStarted at " + time);
 
   const resData = {
     type: "game-reseted"

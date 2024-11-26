@@ -13,7 +13,7 @@ let game = {
     baseSuit: ""
   },
   userTurn: "",
-  winners: null,
+  winners: [],
   // optionals: tableHistory(array of game.middle before being cleared)
 }
 

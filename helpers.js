@@ -33,4 +33,30 @@ function canUserPlayThisCard(playedCard) {
   };
 };
 
-module.exports = {newShuffledDeck, canUserPlayThisCard};
+function sortHand(hand) {
+  const sortedhand = hand.sort((A,B) => {
+    // sort by order of ♠>♥>♣>♦
+    if (A.suit == "♠") return -1;
+
+    if (A.suit == "♥" && B.suit != "♠") return -1;
+    if (A.suit == "♥" && B.suit == "♠") return 1;
+
+    if (A.suit == "♣" && B.suit == "♦") return -1;
+    if (A.suit == "♣" && (B.suit == "♥" || B.suit == "♠")) return 1;
+
+    if (A.suit == "♦") return 1;
+
+    
+    // if A.value is larger than B.value, A is greater (so move index -1)
+    if(A.value > B.value) return -1;
+    // if A.value is smaller than B.value, A is weaker (so move index -1)
+    if(A.value < B.value) return 1;
+
+    //if both their suit and value is equal (which isn't possible), don't change index
+    return 0;
+  });
+
+  return sortedhand;
+}
+
+module.exports = {newShuffledDeck, canUserPlayThisCard, sortHand};

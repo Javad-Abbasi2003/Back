@@ -1,7 +1,8 @@
-const { newShuffledDeck, canUserPlayThisCard } = require("./helpers");
+const { newShuffledDeck, canUserPlayThisCard, sortHand } = require("./helpers");
 
 let Deck = newShuffledDeck();
 let game = {
+  gameIsStarted: false,
   users: [],
   teams: [{players: [], score: 0}, {players: [], score: 0}],
   trumper: "",
@@ -35,6 +36,7 @@ function addPlayer(payload, ws, wss) {
       userTeam = 1;
     }
     
+    // data to send to user
     const resData = {
       type: "new-player",
       userName,
@@ -42,6 +44,7 @@ function addPlayer(payload, ws, wss) {
       teams: game.teams,
       userTeam
     };
+    // wss for broadcasting data
     wss.broadcast(JSON.stringify(resData));
   } else if(game.users.includes(userName)) {
     //userName already exists
@@ -61,24 +64,21 @@ function addPlayer(payload, ws, wss) {
 };
 
 // shuffle deck,choose random trumper, deal 5 card to each user
-function startGame(payload, ws, wss) {
+function startGame(ws, wss) {
   //no payload needed
-  const {} = payload;
 
-  //are there 4 players?
-  if(game.users.length == 4) {
+  //are there 4 players? && game is not started yet?
+  if(game.users.length == 4 && !game.gameIsStarted) {
     Deck = newShuffledDeck();
 
     // random 0 to 3 for random trumper
     const rnd = Math.floor(Math.random()*4);
-    game.trumper = users[rnd];
+    game.trumper = game.users[rnd];
     
     // deal 5 cards forEach player
     game.users.forEach(user => {
-      // put 5 first cards of the deck in user's hand
-      const newPlayerHand = [...Deck.splice(0, 5)];
-      // sort player hand
-      newPlayerHand.sort((A,B)=> A.suit.localeCompare(B.suit) || (B.value - A.value));
+      // put 5 first cards of the deck in user's hand & sort them
+      const newPlayerHand = sortHand([...Deck.splice(0, 5)]);
       game.hands[user] = newPlayerHand;
     });
 
@@ -90,9 +90,10 @@ function startGame(payload, ws, wss) {
     wss.broadcast(JSON.stringify(resData));
 
   } else {
+    const message = game.gameIsStarted ? "Game Already Started!" : "4 players needed to start game!"
     const resData = {
       type: "error",
-      message: "4 players needed to start game!"
+      message
     }
     ws.send(JSON.stringify(resData));
   }
@@ -107,10 +108,8 @@ function selectTrump(payload, ws, wss) {
 
     // complete each user's hand
     game.users.forEach(user => {
-      // deal next 8 cards
-      const newPlayerHand = [ ...game.hands[user], ...Deck.splice(0, 8) ];
-      // sort player hand
-      newPlayerHand.sort((A,B)=> A.suit.localeCompare(B.suit) || (B.value - A.value));
+      // deal & sort next 8 cards
+      const newPlayerHand = sortHand([...game.hands[user], ...Deck.splice(0, 8)]);
       // set player hand
       game.hands[user] = newPlayerHand;
     });
@@ -121,6 +120,7 @@ function selectTrump(payload, ws, wss) {
     const resData = {
       type: "trump-selected",
       trump: game.trump,
+      userTurn: game.userTurn,
       hands: game.hands
     };
     wss.broadcast(JSON.stringify(resData));

@@ -15,7 +15,7 @@ const newShuffledDeck = () => {
   return cards;
 };
 
-function canUserPlayThisCard(playedCard) {
+function canUserPlayThisCard(playedCard, game) {
   const userHand = game.hands[playedCard.user];
   if(playedCard.suit == game.middle.baseSuit) {
     // user played baseSuit, so it's okay.
@@ -34,29 +34,26 @@ function canUserPlayThisCard(playedCard) {
 };
 
 function sortHand(hand) {
-  const sortedhand = hand.sort((A,B) => {
-    // sort by order of ♠>♥>♣>♦
-    if (A.suit == "♠") return -1;
+  // divide cards by suit
+  const spades = hand.filter(card => card.suit == "♠");
+  const hearts = hand.filter(card => card.suit == "♥");
+  const clubs = hand.filter(card => card.suit == "♣");
+  const diamonds = hand.filter(card => card.suit == "♦");
 
-    if (A.suit == "♥" && B.suit != "♠") return -1;
-    if (A.suit == "♥" && B.suit == "♠") return 1;
+  // sort each suit
+  spades.sort((A,B)=> B.value-A.value);
+  hearts.sort((A,B)=> B.value-A.value);
+  clubs.sort((A,B)=> B.value-A.value);
+  diamonds.sort((A,B)=> B.value-A.value);
 
-    if (A.suit == "♣" && B.suit == "♦") return -1;
-    if (A.suit == "♣" && (B.suit == "♥" || B.suit == "♠")) return 1;
-
-    if (A.suit == "♦") return 1;
-
-    
-    // if A.value is larger than B.value, A is greater (so move index -1)
-    if(A.value > B.value) return -1;
-    // if A.value is smaller than B.value, A is weaker (so move index -1)
-    if(A.value < B.value) return 1;
-
-    //if both their suit and value is equal (which isn't possible), don't change index
-    return 0;
-  });
-
-  return sortedhand;
-}
+  // concat suits for full hand (change order for a better divide of colors)
+  if(!hearts.length) {
+    return [...spades, ...diamonds, ...clubs];
+  } else if(!clubs.length) {
+    return [...hearts, ...spades, ...diamonds];
+  } else {
+    return [...spades, ...hearts, ...clubs, ...diamonds];
+  };
+};
 
 module.exports = {newShuffledDeck, canUserPlayThisCard, sortHand};

@@ -168,12 +168,12 @@ function playCard(payload, ws, wss) {
 
     } else {
       // if it's middle of round
-      if(canUserPlayThisCard(playedCard)) {
+      if(canUserPlayThisCard(playedCard, game)) {
         // play card
         removeCardFromHand(playedCard);
         game.middle.cards.push(playedCard);
 
-        if(game.middle.cards.length <= 2) {
+        if(game.middle.cards.length <= 3) {
           // just play card & change turns, nothing extra
           // set next user
           nextTurnUser();

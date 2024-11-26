@@ -24,17 +24,23 @@ function addPlayer(payload, ws, wss) {
 
   if(game.users.length < 4 && !game.users.includes(userName)){ // don't add if full or userName exists
     game.users.push(userName);
-    
-    if(game.teams[0].players.length < 2)
+
+    let userTeam;
+
+    if(game.teams[0].players.length < 2) {
       game.teams[0].players.push(userName);
-    else
+      userTeam = 0;
+    } else {
       game.teams[1].players.push(userName);
+      userTeam = 1;
+    }
     
     const resData = {
       type: "new-player",
       userName,
       users: game.users,
-      teams: game.teams
+      teams: game.teams,
+      userTeam
     };
     wss.broadcast(JSON.stringify(resData));
   } else if(game.users.includes(userName)) {
@@ -245,7 +251,7 @@ function resetGame(ws, wss) {
     userTurn: "",
     winners: null,
   }
-  
+
   const date = new Date();
   const time = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
   console.log("Game ReStarted at " + time);

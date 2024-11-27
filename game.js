@@ -281,9 +281,7 @@ function newGame(ws, wss) {
 
   const resData = {
     type: "new-game",
-    payload: {
-      gameObject: game
-    }
+    gameObject: game
   }
   wss.broadcast(JSON.stringify(resData));
 

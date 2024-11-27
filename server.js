@@ -48,8 +48,8 @@ function handleWebSocketMessage(type, payload, ws) {
 
 const port = 8000;
 const NetworkIP = getNetworkIP();
-console.log(`
-Local:   \x1b[34m\x1b[4mhttp://localhost:${port}\x1b[0m\x1b[0m
-Network: \x1b[34m\x1b[4mhttp://${NetworkIP}:${port}\x1b[0m\x1b[0m
-`);
+console.log(`Local:   \x1b[34m\x1b[4mhttp://localhost:${port}\x1b[0m\x1b[0m`);
+try {
+  console.log(`Network: \x1b[34m\x1b[4mhttp://${NetworkIP}:${port}\x1b[0m\x1b[0m`)
+} catch (error) {}
 server.listen(port);

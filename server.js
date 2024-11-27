@@ -1,6 +1,7 @@
 const http = require("http");
 const websocket = require("ws");
 const { addPlayer, startGame, selectTrump, playCard, resetGame, newGame } = require("./game");
+const { getNetworkIP } = require("./helpers");
 
 const server = http.createServer((req, res) => res.end("I am connected") );
 const wss = new websocket.Server({ server });
@@ -46,5 +47,9 @@ function handleWebSocketMessage(type, payload, ws) {
 }
 
 const port = 8000;
-console.log(`listening on port ${port}...`)
+const NetworkIP = getNetworkIP();
+console.log(`
+Local:   \x1b[34m\x1b[4mhttp://localhost:${port}\x1b[0m\x1b[0m
+Network: \x1b[34m\x1b[4mhttp://${NetworkIP}:${port}\x1b[0m\x1b[0m
+`);
 server.listen(port);

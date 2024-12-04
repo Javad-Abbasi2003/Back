@@ -302,11 +302,7 @@ function newGame(ws, wss) {
 
   const resData = {
     type: "new-game",
-<<<<<<< HEAD
     newGameObject: game
-=======
-    gameObject: game
->>>>>>> 11c7e52e48f4ad93c0d0e785a9976a3a9b5aed9f
   }
   wss.broadcast(JSON.stringify(resData));
 

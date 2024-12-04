@@ -64,17 +64,24 @@ function addPlayer(payload, ws, wss) {
 };
 
 // shuffle deck,choose random trumper, deal 5 card to each user
-function startGame(ws, wss) {
+function startGame(ws, wss, newRandTrumper) {
   //no payload needed
 
   //are there 4 players? && game is not started yet?
   if(game.users.length == 4 && !game.gameIsStarted) {
-    Deck = newShuffledDeck();
-
-    // random 0 to 3 for random trumper
-    const rnd = Math.floor(Math.random()*4);
-    game.trumper = game.users[rnd];
+    game.gameIsStarted = true;
     
+    if(newRandTrumper) {
+      //reOrder users
+      game.users = [game.teams[0].players[0], game.teams[1].players[0], game.teams[0].players[1], game.teams[1].players[1]];
+      
+      // random 0 to 3 for random trumper
+      const rnd = Math.floor(Math.random()*4);
+      game.trumper = game.users[rnd];
+    }
+
+    Deck = newShuffledDeck();
+      
     // deal 5 cards forEach player
     game.users.forEach(user => {
       // put 5 first cards of the deck in user's hand & sort them
@@ -241,6 +248,7 @@ function resetGame(ws, wss) {
   // no payload
 
   game = {
+    gameIsStarted: false,
     users: [],
     teams: [{players: [], score: 0}, {players: [], score: 0}],
     trumper: "",
@@ -267,27 +275,41 @@ function resetGame(ws, wss) {
 function newGame(ws, wss) {
   // no payload
 
+  let nextTrumper;
+  if(game.winners.includes(game.trumper)) {
+    // trumper won't change
+  }else{
+    const i = game.users.indexOf(game.trumper);
+    if(i<=2) {
+      nextTrumper = game.users[i+1];
+    } else {
+      nextTrumper = game.users[0];
+    };
+  };
+
+  game.trumper = nextTrumper;
+  game.gameIsStarted = false;
   game.teams[0].score = 0;
   game.teams[1].score = 0;
-  game.trumper = "";
   game.hands = {};
   game.trump = "";
   game.middle = {
     cards: [],
     baseSuit: ""
-  }
+  };
   game.userTurn = "";
   game.winners = [];
 
   const resData = {
     type: "new-game",
-    payload: {
-      gameObject: game
-    }
+    newGameObject: game
   }
   wss.broadcast(JSON.stringify(resData));
 
-  startGame(ws, wss);
+  // start a new game with the new trumper after 1sec
+  setTimeout(() => {
+    startGame(ws, wss, false);
+  }, 1000);
 }
 
 //////////////////// dependent functions ////////////////////
@@ -317,12 +339,12 @@ function calcRoundResult() {
   const baseSuit = game.middle.baseSuit;
   const trump = game.trump;
 
-  middleCards.filter(function (card) {
+  const filteredCards = middleCards.filter(function (card) {
     // return card only if suit is baseSuit or trump
     return (card.suit == baseSuit || card.suit == trump);
   });
 
-  const sortedCards = middleCards.sort((A,B) => {
+  const sortedCards = filteredCards.sort((A,B) => {
     // if A is tump and B isn't, A is greater (so move index -1)
     if (A.suit == trump && B.suit != trump) return -1;
     // if A isn't tump but B is, A is weaker (so move index +1)

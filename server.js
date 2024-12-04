@@ -23,7 +23,7 @@ function handleWebSocketMessage(type, payload, ws) {
       addPlayer(payload, ws, wss);
       break;
     case 'start-game':
-      startGame(ws, wss);
+      startGame(ws, wss, true);
       break;
     case 'select-trump':
       selectTrump(payload, ws, wss);

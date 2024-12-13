@@ -1,7 +1,6 @@
 const http = require("http");
 const websocket = require("ws");
-const { addPlayer, startGame, selectTrump, playCard, resetGame, newGame } = require("./game");
-const { getNetworkIP } = require("./helpers");
+const { newRoom, joinRoom, startGame, selectTrump, playCard, newGame, expireOldRoomsInterval } = require("./game");
 
 const server = http.createServer((req, res) => res.end("I am connected") );
 const wss = new websocket.Server({ server });
@@ -13,43 +12,46 @@ wss.broadcast = function(data) {
 
 wss.on("connection", (ws, req) => {
   ws.on("message", (msg) => {
-    const { type, payload } = JSON.parse(msg);
-    handleWebSocketMessage(type, payload, ws);
+    handleWebSocketMessage(JSON.parse(msg), ws);
   });
 });
 
-function handleWebSocketMessage(type, payload, ws) {
+function handleWebSocketMessage(msg, ws) {
+  const { type, payload } = msg;
   switch (type) {
-    case 'add-player':
-      addPlayer(payload, ws, wss);
+    case 'new-room':
+      newRoom(payload, ws, wss);
+      break;
+    case 'join-room':
+      joinRoom(payload, ws);
       break;
     case 'start-game':
-      startGame(ws, wss, true);
+      startGame(payload, ws);
       break;
     case 'select-trump':
-      selectTrump(payload, ws, wss);
+      selectTrump(payload, ws);
       break;
     case 'play-card':
-      playCard(payload, ws, wss);
+      playCard(payload, ws);
       break;
-  //   case 'remove-player':
-  //     removePlayer(payload, ws); // remove the user from game.users
-  //     break;
-    case 'reset-game':
-      resetGame(ws, wss);
-      break;
+    // case 'remove-player':
+    //   removePlayer(payload, ws); // remove the user from game.users
+    //   break;
     case 'new-game':
-      newGame(ws, wss);
+      newGame(payload, ws);
       break;
+    // case 'remove-room':
+    //   removeRoom(payload, ws); // remove room from rooms if user is roomAdmin
+    //   break;
     default:
       console.log('Unknown message type:', type);
-  }
-}
+  };
+};
+
+expireOldRoomsInterval(12*3600, 3600);// 12h, 1h
 
 const port = 3000;
-// const NetworkIP = getNetworkIP();
-console.log(`Local:   \x1b[34m\x1b[4mhttp://localhost:${port}\x1b[0m\x1b[0m`);
-// try {
-//   console.log(`Network: \x1b[34m\x1b[4mhttp://${NetworkIP}:${port}\x1b[0m\x1b[0m`)
-// } catch (error) {}
 server.listen(port);
+
+console.log(`API: \x1b[34m\x1b[4mhttp://localhost:${port}\x1b[0m\x1b[0m`);
+console.log(`WS: \x1b[34m\x1b[4mws://localhost:${port}\x1b[0m\x1b[0m`);

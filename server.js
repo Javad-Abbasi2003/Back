@@ -1,6 +1,6 @@
 const http = require("http");
 const websocket = require("ws");
-const { newRoom, joinRoom, startGame, selectTrump, playCard, newGame, expireOldRoomsInterval } = require("./game");
+const { newRoom, joinRoom, startGame, selectTrump, playCard, newGame, expireOldRoomsInterval, removeDisconnectedUser } = require("./game");
 
 const server = http.createServer((req, res) => res.end("I am connected") );
 const wss = new websocket.Server({ server });
@@ -11,12 +11,18 @@ wss.broadcast = function(data) {
 };
 
 wss.on("connection", (ws, req) => {
+  // runs when a client is connected
   console.log("new Connection. clients Count: ", wss.clients.size);
+
   ws.on("message", (msg) => {
+    // runs when a client sends a message
     handleWebSocketMessage(JSON.parse(msg), ws);
   });
+  
   ws.on("close", () => {
+    // runs when a client disconnects
     console.log("closed Connection. clients Count: ", wss.clients.size);
+    removeDisconnectedUser(ws);
   });
 });
 

@@ -1,4 +1,4 @@
-const { newShuffledDeck, canUserPlayThisCard, sortHand, winnerNewScore, roomUsersBroadcast, sendError } = require("./helpers");
+const { newShuffledDeck, canUserPlayThisCard, sortHand, winnerNewScore, roomUsersBroadcast, sendError, removeUser, removeUserWS, sendRoomNotify } = require("./helpers");
 
 let rooms = [];
 
@@ -59,7 +59,11 @@ function newRoom(payload, ws, wss) {
   const index = rooms.map(room => room.roomCode).indexOf(roomCode);
   if(index<0) {
     // roomCode doesn't exist => create room
-    // create a refrence free copy of gameInstance
+
+    //add userName to ws for later use
+    ws.userName = userName;
+
+    // create a refrenceFree copy of gameInstance
     const newGameInstance = global.structuredClone(gameInstance);
 
     let newGameObject = {
@@ -101,6 +105,9 @@ function joinRoom(payload, ws) {
     const room = rooms[index];
     // room exists => add user to room if conditions are met
     if(room.userNames.length < 4 && !room.userNames.includes(userName)) { // don't add if full or userName exists
+      //add userName to ws for later use
+      ws.userName = userName;
+
       let userTeam;
       if(room.teams[0].players.length < 2) {
         room.teams[0].players.push(userName);
@@ -109,6 +116,9 @@ function joinRoom(payload, ws) {
         room.teams[1].players.push(userName);
         userTeam = 1;
       };
+
+      // room has no Admin => set joined user as Admin
+      if(!room.roomAdmin) room.roomAdmin = userName;
       
       // send data to user
       const resData = {
@@ -128,6 +138,30 @@ function joinRoom(payload, ws) {
       // add user's ws to room.users after broadCast to prevent same user getting the broadCast
       room.users[userName] = ws;
       room.userNames.push(userName);
+    } else if (room.userNames.includes(userName) && !Object.keys(room.users).includes(userName)) {
+      // RECONNECT: userName exist but their WS is missing => replace new WS
+      sendRoomNotify(room.users, `"${userName}" reConnected!`);
+
+      const userTeam = room.teams[0].players.includes(userName) ? 0 : 1;
+      const resData = {
+        type: "reconnected",
+        roomAdmin: room.roomAdmin,
+        teams: room.teams,
+        userTeam,
+        trumper: room.trumper,
+        hand: room.hands[userName],
+        trump: room.trump,
+        middle: room.middle,
+        userTurn: room.userTurn,
+        winners: room.winners
+      };
+      ws.send(JSON.stringify(resData));
+
+      ws.userName = userName;
+      room.users[userName] = ws;
+
+      console.log(`i: "${userName}" reconnected to room "${roomCode}"`);
+      console.log(room.users);
     } else {
       const message = room.users[userName] ?
         "UserName already exists in this room!" // userName already exists => send error
@@ -194,7 +228,7 @@ function startGame(payload, ws) {
       };
     } else {
       // user isn't admin => send error
-      sendError(ws, `Only room admin "${roomCode}" can start the game!`);
+      sendError(ws, `Only room admin "${room.roomAdmin}" can start the game!`);
     };
   } else {
     // room doesn't exists => send error
@@ -505,5 +539,26 @@ function expireOldRoomsInterval(TimeToExpire, interval) {
   }, interval*1000);// get seconds as Fn Input and convert to ms
 };
 
+function removeDisconnectedUser(ws) {
+  // check if WS has a userName
+  // if a WS has a userName, it means that the user was in a room
+  if(Object.keys(ws).includes("userName")) {
+    const userName = ws.userName;
+    
+    rooms.map(room => {
+      if(room.userNames.includes(userName)) {
+        if (!room.gameIsStarted) {
+          //if game is not started => completely remove user
+          removeUser(userName, room);
+          console.log(`X: "${userName}" removed from room "${room.roomCode}" due to disConnecting`)
+        } else {
+          // if game is started => only remove user's ws to make his userName reconnectable
+          removeUserWS(userName, room);
+        };
+      };
+    });
+  };
+};
 
-module.exports = { newRoom, joinRoom, startGame, selectTrump, playCard, newGame, expireOldRoomsInterval };
+
+module.exports = { newRoom, joinRoom, startGame, selectTrump, playCard, newGame, expireOldRoomsInterval, removeDisconnectedUser };

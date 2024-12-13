@@ -86,4 +86,48 @@ function sendError(ws, message, callback="") {
   ws.send(JSON.stringify(resData));
 };
 
-module.exports = {newShuffledDeck, canUserPlayThisCard, sortHand, winnerNewScore, roomUsersBroadcast, sendError};
+function sendRoomNotify(users, notifMessage) {
+  const objKeys = Object.keys(users);
+  objKeys.map(userName => {
+    users[userName].send(JSON.stringify({type: "notify", message: notifMessage}));
+  });
+};
+
+function removeUser(userName, room) {
+  room.userNames.splice(room.userNames.indexOf(userName),1);
+  
+  room.teams.forEach(team => {
+    team.players = team.players.filter(player => player != userName);
+  });
+  
+  const removeUserWS = (name, users) => delete users[name];
+  removeUserWS(userName, room.users);
+  
+  if(userName == room.roomAdmin) {
+    // if user was roomAdmin => set new Admin and notify other users
+    //if there are users in room change the room Admin
+    room.roomAdmin = room.userNames.length ? room.userNames[0] : "";
+  };
+  
+  const resData = {
+    type: "user-left",
+    userName,
+    teams: room.teams,
+    roomAdmin: room.roomAdmin
+  };
+  roomUsersBroadcast(room.users, resData);
+};
+
+function removeUserWS(userName, room) {
+  //remove user's WS
+  delete room.users[userName];
+  
+  const resData = {
+    type: "user-disconnected",
+    userName
+  };
+  roomUsersBroadcast(room.users, resData);
+};
+
+
+module.exports = {newShuffledDeck, canUserPlayThisCard, sortHand, winnerNewScore, roomUsersBroadcast, sendError, sendRoomNotify, removeUser, removeUserWS};

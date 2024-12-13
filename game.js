@@ -76,7 +76,7 @@ function newRoom(payload, ws, wss) {
     newGameObject.teams[0].players.push(userName);
 
     rooms.push(newGameObject);
-    console.log("Room created:", {roomCode, userName});
+    console.log(`i: "${userName}" created a room: "${roomCode}"`);
 
 
     const resData = {
@@ -157,6 +157,8 @@ function startGame(payload, ws) {
     if (userName == room.roomAdmin) {
       //are there 4 players? && game is not started yet?
       if(room.userNames.length == 4 && !room.gameIsStarted) {
+        console.log(`i: room ${roomCode} started a new game`);
+
         room.gameIsStarted = true;
         
         // choose random trumper if room has no trumper
@@ -185,7 +187,6 @@ function startGame(payload, ws) {
         });
 
       } else {
-        console.log("room:", room);
         const message = room.gameIsStarted ?
           "Game already started!"
         : "4 players needed to start game!";
@@ -477,11 +478,13 @@ function calcRoundResult(room) {
     if((room.teams[0].score += 1) == 7) {
       room.winners = room.teams[0].players;
       winnerNewScore(room);
+      console.log(`i: room "${room.roomCode}" finished a game. totalScore: ${room.teams[0].totalScore}//${room.teams[1].totalScore}`);
     };
   } else {
     if((room.teams[1].score += 1) == 7) {
       room.winners = room.teams[1].players;
       winnerNewScore(room);
+      console.log(`i: room "${room.roomCode}" finished a game. totalScore: ${room.teams[0].totalScore}//${room.teams[1].totalScore}`);
     };
   };
 };
@@ -493,8 +496,12 @@ function expireOldRoomsInterval(TimeToExpire, interval) {
   setInterval(() => {
     rooms = rooms.filter((room) => {
       //return if its created in less than {TimeToExpire} seconds ago
-      return Date.now() - room.createTime < TimeToExpire*1000;// get seconds as Fn Input and convert to ms
+      const condition = Date.now() - room.createTime < TimeToExpire*1000;// get seconds as Fn Input and convert to ms
+
+      if(condition) console.log(`X: room ${room.roomCode} expired!`);
+      return condition;
     });
+    console.log(`info: Rooms count: ${rooms.length} - Date: ${Date().slice(0,34)}`);
   }, interval*1000);// get seconds as Fn Input and convert to ms
 };
 

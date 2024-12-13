@@ -11,8 +11,12 @@ wss.broadcast = function(data) {
 };
 
 wss.on("connection", (ws, req) => {
+  console.log("new Connection. clients Count: ", wss.clients.size);
   ws.on("message", (msg) => {
     handleWebSocketMessage(JSON.parse(msg), ws);
+  });
+  ws.on("close", () => {
+    console.log("closed Connection. clients Count: ", wss.clients.size);
   });
 });
 
